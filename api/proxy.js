@@ -2,16 +2,26 @@ import fetch from "node-fetch";
 
 export default async function handler(req, res) {
   try {
-    const { url, method = "POST", payload } = req.body;
+
+    const body = req.body || {};
+
+    const url = body.url;
+    const method = body.method || "POST";
+    const payload = body.payload || {};
+
+    if (!url) {
+      return res.status(400).json({
+        error: "Missing 'url' in request body"
+      });
+    }
 
     const response = await fetch(url, {
-      method: method,
+      method,
       headers: {
         "Content-Type": "application/json",
-        "User-Agent": "Mozilla/5.0",
-        "Accept": "application/json"
+        "User-Agent": "Mozilla/5.0"
       },
-      body: JSON.stringify(payload || {})
+      body: JSON.stringify(payload)
     });
 
     const data = await response.text();
