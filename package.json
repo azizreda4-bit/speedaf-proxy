@@ -1,8 +1,8 @@
 {
-  "name": "speedaf-proxy",
+  "name": "speedaf-clean",
   "version": "1.0.0",
   "type": "module",
-  "dependencies": {
-    "node-fetch": "^3.3.2"
+  "engines": {
+    "node": "18.x"
   }
 }
