@@ -1,35 +1,41 @@
 export default async function handler(req, res) {
   try {
-    // Allow only POST (important for Apps Script)
+    // Only POST allowed
     if (req.method !== "POST") {
       return res.status(405).json({
-        error: "Only POST requests are allowed"
+        error: "POST only"
       });
     }
 
-    const body = req.body || {};
+    // Vercel sometimes gives raw body → ensure safe parsing
+    const body =
+      typeof req.body === "string"
+        ? JSON.parse(req.body)
+        : req.body || {};
 
-    const url = body.url;
-    const method = body.method || "POST";
-    const payload = body.payload || {};
+    const { url, method = "POST", payload = {} } = body;
 
-    // Validate URL
     if (!url) {
       return res.status(400).json({
-        error: "Missing 'url' in request body"
+        error: "Missing URL"
       });
     }
 
-    // Forward request
-    const response = await fetch(url, {
+    // Build fetch options
+    const options = {
       method,
       headers: {
         "Content-Type": "application/json",
-        "Accept": "application/json",
         "User-Agent": "Mozilla/5.0"
-      },
-      body: method === "GET" ? undefined : JSON.stringify(payload)
-    });
+      }
+    };
+
+    // Only attach body if not GET/HEAD
+    if (method !== "GET" && method !== "HEAD") {
+      options.body = JSON.stringify(payload);
+    }
+
+    const response = await fetch(url, options);
 
     const contentType = response.headers.get("content-type");
 
@@ -38,15 +44,15 @@ export default async function handler(req, res) {
     // Handle JSON or text safely
     if (contentType && contentType.includes("application/json")) {
       data = await response.json();
-      return res.status(200).json(data);
     } else {
       data = await response.text();
-      return res.status(200).send(data);
     }
+
+    return res.status(200).send(data);
 
   } catch (err) {
     return res.status(500).json({
-      error: err.message
+      error: err.message || "Server error"
     });
   }
 }
